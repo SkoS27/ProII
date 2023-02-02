@@ -1,0 +1,193 @@
+/*
+ * TITLE: PROGRAMMING II LABS
+ * SUBTITLE: Practical 1
+ * AUTHOR 1: Carmelo Alejandro Garcia Almeida LOGIN 1: carmelo.garcia
+ * AUTHOR 2: Pedro Botana Lobelle LOGIN 2: pedro.botana
+ * GROUP: 2.4
+ * DATE: 20 / 03 / 22
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "types.h"
+
+#define MAX_BUFFER 255
+
+#ifdef DYNAMIC_LIST
+#include "dynamic_list.h"
+#endif
+#ifdef STATIC_LIST
+#include "static_list.h"
+#endif
+
+
+void New(tProductId id,tUserId u,tProductCategory c,tProductPrice pr,tList *L);
+/* OBJETIVO:Añade un un producto nuevo a la lista previamente inicializada y creada
+ * ENTRADA:la id de producto, la id del vendedor, la categoria del producto, el precio del producto y la lista pasada como parametro
+ * SALIDA:no hay salida, es una funcion void, añade el elemento indicado a la lista
+ * PRECONDICION: la lista tiene que estar previamente creada e inicializada
+ * */
+void Stats(tList *L);
+/* OBJETIVO: Mostrar por pantalla los productos de la lista y los que hay en determinada categoria
+ * ENTRADA: la lista pasada como parametro
+ * SALIDA: se imprimen los elementos de la lista
+ * PRECONDICION: la lista tiene que estar previamente creada e inicializada
+ * */
+void Bid(tProductId id,tUserId u,tProductPrice bid,tList *L);
+/* OBJETIVO: registrar el numero y el dinero pujado por un producto
+ * ENTRADA: el id de producto, el id del comprador, el valor a pujar y la lista pasada como puntero
+ * SALIDA:ninguna, es simplemente un registro y actualizacion de la lista
+ * PRECONDICION: la lista tiene que estar previamente creada e inicializada
+ * */
+void Delete(tProductId id,tList *L);
+/* OBJETIVO: eliminar un elemento de la lista
+ * ENTRADA: el producto a eliminar y la lista como puntero
+ * SALIDA: ninguna, es una funcion destructora
+ * */
+
+char categoria(tProductCategory cat);
+/* OBJETIVO: convertit el tproductcategory a string
+ * ENTRADA: la categoria como tproductcategory
+ * SALIDA: la categoria como string
+ * */
+void processCommand(char *commandNumber, char command, char *param1, char *param2, char *param3, char *param4) {
+    tList L;
+    createEmptyList(&L);
+    float precio= atof(param4);
+    switch (command) {
+        case 'N':
+            printf("********************\n");
+            printf("%s N: product %s seller %s category %s price %s\n", commandNumber, param1, param2, param3, param4);
+            New(param1,param2, *param3,precio, &L);
+            printf("********************\n");
+            break;
+        case 'S':
+            printf("********************\n");
+            printf("%s S\n", commandNumber);
+            Stats(&L);
+            printf("********************\n");
+            break;
+        case 'B':
+            printf("********************\n");
+            printf("%s B: product %s seller %s category %s price %s\n",commandNumber,param1,param2,param3,param4);
+            Bid(param1,param2,precio,&L);
+            printf("********************\n");
+            break;
+        case 'D':
+            printf("********************\n");
+            printf("%s D: product %s seller %s category %s price %s\n",commandNumber,param1,param2,param3,param4);
+            Delete(param1,&L);
+            printf("********************\n");
+            break;
+        default:
+            break;
+    }
+}
+
+void readTasks(char *filename) {
+    FILE *f = NULL;
+    char *commandNumber, *command, *param1, *param2, *param3, *param4;
+    const char delimiters[] = " \n\r";
+    char buffer[MAX_BUFFER];
+
+    f = fopen(filename, "r");
+
+    if (f != NULL) {
+
+        while (fgets(buffer, MAX_BUFFER, f)) {
+            commandNumber = strtok(buffer, delimiters);
+            command = strtok(NULL, delimiters);
+            param1 = strtok(NULL, delimiters);
+            param2 = strtok(NULL, delimiters);
+            param3 = strtok(NULL, delimiters);
+            param4 = strtok(NULL, delimiters);
+
+            processCommand(commandNumber, command[0], param1, param2, param3, param4);
+        }
+
+        fclose(f);
+
+    } else {
+        printf("Cannot open file %s.\n", filename);
+    }
+}
+
+
+int main(int nargs, char **args) {
+
+    char *file_name = "new.txt";
+
+    if (nargs > 1) {
+        file_name = args[1];
+    } else {
+        #ifdef INPUT_FILE
+        file_name = INPUT_FILE;
+        #endif
+    }
+    readTasks(file_name);
+
+    return 0;
+}
+
+void New(tProductId id,tUserId u,tProductCategory c,tProductPrice pr,tList *L){
+    if(findItem(id,*L)!=LNULL){//if-else no funciona y categoria tampoco
+        printf("+ Error: New not possible\n");
+    }
+    else {
+        tItemL producto;
+        strcpy(producto.productId, id);
+        strcpy(producto.seller, u);
+        producto.bidCounter = 0;
+        producto.productPrice = pr;
+        insertItem(producto, LNULL, L);
+        printf("* New: product %s seller %s category %c price %.2f\n", producto.productId, producto.seller,categoria(c), pr);
+    }
+}
+void Stats(tList *L) {//no funciona el if-else y el for crea bucle infinito
+    tItemL producto;
+    if (isEmptyList(*L)==false) {
+        for (tPosL p = first(*L); p <= last(*L); p = next(p, *L)) {
+            producto = getItem(p, *L);
+            printf("Product %s seller %s category %c price  bids %2d\n", producto.productId, producto.seller,producto.productCategory, producto.bidCounter);
+        }
+    }
+    else
+        printf("+ Error: Stats not possile\n");
+}
+void Bid(tProductId id,tUserId u,tProductPrice bid,tList *L){//no probada
+    tItemL producto;
+    if(!findItem(id,*L)){
+        producto=getItem(findItem(id,*L),*L);
+        if (strcmp(u,producto.seller)!=0){
+            if(producto.productPrice< bid){
+                producto.productPrice=bid;
+                producto.bidCounter++;
+                printf("* Bid: product %s seller %s category %u price %.2f bids %d\n",producto.productId,producto.seller,producto.productCategory,producto.productPrice,producto.bidCounter);
+            }
+            else
+                printf("+ Error: Bid not possible\n");
+        }
+        else
+            printf("+ Error: Bid not possible\n");
+    } else
+        printf("+ Error: Bid not possible\n");
+}
+void Delete(tProductId id,tList *L) {//no probada
+    tPosL p = findItem(id, *L);
+    if (p != LNULL) {
+        tItemL producto;
+        producto = getItem(p, *L);
+        printf("* Bid: product %s seller %s category %u price %.2f bids %d\n", producto.productId, producto.seller,
+               producto.productCategory, producto.productPrice, producto.bidCounter);
+        deleteAtPosition(p, L); /*elimina el producto de la lista */
+    } else {
+        printf("+ Error: Bid not possible\n");
+    }
+}
+char categoria(tProductCategory cat){
+    if(cat==painting)
+        return painting;
+    else
+        return book;
+}
