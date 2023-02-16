@@ -1,0 +1,29 @@
+void Stats(tList *L) {
+    tPosL p;
+    int contador=0;
+    tNumVotes votos_nulos = 0, votos = 0;
+    if (!isEmptyList(*L)) {
+        p = first(*L);
+        while (p != LNULL) {
+            tItemL participante = getItem(p, *L);
+            if (participante.numVotes == -1) {
+                votos_nulos++;
+            } else {
+                votos + participante.numVotes;
+            }
+            p = next(p, *L);
+            contador ++;
+        }
+        while (p != LNULL) {
+            tItemL participant = getItem(p, *L);
+            printf("Participant %s location %s numvotes %d (%.2f) \n", participant.participantName,
+                   participant.EUParticipant == true ? "eu" : "non-eu", participant.numVotes,
+                   ((participant.numVotes / votos) * 100.00));
+            p = next(p, *L);
+        }
+        printf("Null votes %d\n",votos_nulos);
+        printf("Participation: %d votes from %d voters (%2.f)\n",votos > votos_nulos ? votos : votos_nulos,contador,(((votos > votos_nulos ? votos : votos_nulos)/ contador) * 100.00));
+    } else {
+        printf("+ Error: Stats not possile\n");
+    }
+}
